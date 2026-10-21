@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>В дороге — плейлист (офлайн)</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#eceae4;--fg:#1a1c20;--mut:#62666e;--card:#dedcd4;--line:#c8c5ba;--acc:#d9a400;--onacc:#1a1c20}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171b;--fg:#eeece4;--mut:#9a9ea6;--card:#20232a;--line:#33363e;--acc:#f2c230;--onacc:#15171b}}
+:root[data-theme="dark"]{--bg:#15171b;--fg:#eeece4;--mut:#9a9ea6;--card:#20232a;--line:#33363e;--acc:#f2c230;--onacc:#15171b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:26px;font-weight:800;margin:0 0 16px;letter-spacing:-.01em}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.player{background:var(--card);border-radius:18px;padding:20px 18px 18px}
+.now{font-size:20px;font-weight:600;min-height:56px;overflow-wrap:anywhere}
+.now small{display:block;font-weight:400;font-size:14px;color:var(--mut);margin-top:2px}
+.seek{--p:0%;width:100%;height:28px;margin:10px 0 0;background:transparent;-webkit-appearance:none;appearance:none}
+.seek::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--acc) var(--p),transparent var(--p)),repeating-linear-gradient(90deg,var(--mut) 0 14px,transparent 14px 24px)}
+.seek::-moz-range-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--acc) var(--p),transparent var(--p)),repeating-linear-gradient(90deg,var(--mut) 0 14px,transparent 14px 24px)}
+.seek::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--acc);margin-top:-8px;border:0}
+.seek::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--acc);border:0}
+.times{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
+.ctl{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.ctl button{width:56px;height:56px;border-radius:50%;display:grid;place-items:center}
+.ctl svg{width:28px;height:28px;fill:currentColor}
+.ctl .play{width:76px;height:76px;background:var(--acc);color:var(--onacc)}
+.ctl .play svg{width:34px;height:34px}
+.ctl .tog{width:48px;height:48px;color:var(--mut)}
+.ctl .tog[aria-pressed="true"]{color:var(--onacc);background:var(--acc)}
+.bar{display:flex;align-items:center;justify-content:space-between;margin:26px 0 8px}
+.bar h2{font-size:18px;margin:0}
+.add{background:var(--fg);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+li .t{flex:1;text-align:left;padding:14px 8px 14px 12px;border-left:4px solid transparent;overflow-wrap:anywhere;min-height:52px}
+li.cur .t{border-left-color:var(--acc);font-weight:600}
+li .rm{width:48px;height:48px;color:var(--mut);font-size:22px}
+.empty{color:var(--mut);padding:24px 4px}
+.warn{background:var(--card);border-radius:12px;padding:12px 14px;margin-top:12px;font-size:14px;color:var(--mut)}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:no-preference){.ctl button{transition:transform .1s}.ctl button:active{transform:scale(.94)}}
+</style>
+</head>
+<body>
+<main>
+<h1>В дороге</h1>
+<section class="player" aria-label="Плеер">
+  <div class="now" id="now">Ничего не играет<small>Добавьте треки ниже</small></div>
+  <input class="seek" id="seek" type="range" min="0" max="1000" value="0" aria-label="Перемотка">
+  <div class="times"><span id="tc">0:00</span><span id="td">0:00</span></div>
+  <div class="ctl">
+    <button class="tog" id="shuf" aria-pressed="false" aria-label="Вперемешку"><svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-3.1 4.4L8.9 9.2 11.2 6H17V3zM3 7h4l8.6 12H17v-3l4 4-4 4v-3h-3.4L5.8 9H3V7zm0 10h2.8l2-2.8 1.5 2.2L8.9 19H3v-2z"/></svg></button>
+    <button id="prev" aria-label="Предыдущий"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+    <button class="play" id="pp" aria-label="Играть"><svg id="ico" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+    <button id="next" aria-label="Следующий"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5l11 7L4 19z"/></svg></button>
+    <button class="tog" id="rep" aria-pressed="false" aria-label="Повторять плейлист"><svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg></button>
+  </div>
+</section>
+<div class="bar"><h2 id="cnt">Треки</h2><button class="add" id="addbtn">Добавить треки</button></div>
+<input id="file" type="file" accept="audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.flac" multiple hidden>
+<ul id="list"></ul>
+<div class="empty" id="empty">Здесь пока пусто. Нажмите «Добавить треки» и выберите файлы на телефоне. Они сохранятся в браузере этого устройства и останутся после перезапуска.</div>
+<div class="warn" id="warn" hidden>Браузер не даёт сохранять файлы, поэтому треки пропадут после закрытия страницы.</div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+let db=null,tracks=[],cur=-1,shuffle=false,repeat=false,url=null;
+const audio=new Audio();
+const fmt=s=>{s=Math.max(0,Math.floor(s||0));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const req=r=>new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const store=m=>db.transaction('tracks',m).objectStore('tracks');
+function openDb(){return new Promise((ok,no)=>{const r=indexedDB.open('road-playlist',1);r.onupgradeneeded=()=>r.result.createObjectStore('tracks',{keyPath:'id',autoIncrement:true});r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}
+async function load(){
+  try{db=await openDb();tracks=await req(store('readonly').getAll())}
+  catch(e){db=null;tracks=[];$('#warn').hidden=false}
+  render();
+}
+async function add(files){
+  for(const f of files){
+    if(!f.type.startsWith('audio/')&&!/\.(mp3|m4a|aac|ogg|opus|wav|flac)$/i.test(f.name))continue;
+    const t={name:f.name.replace(/\.[^.]+$/,''),blob:f};
+    try{if(!db)throw 0;t.id=await req(store('readwrite').add(t))}catch(e){t.id=-Date.now()-Math.random();$('#warn').hidden=false}
+    tracks.push(t);
+  }
+  render();
+}
+async function remove(i){
+  const t=tracks[i];
+  try{if(db&&t.id>0)await req(store('readwrite').delete(t.id))}catch(e){}
+  tracks.splice(i,1);
+  if(i===cur){audio.pause();audio.removeAttribute('src');cur=-1;setNow()}
+  else if(i<cur)cur--;
+  render();
+}
+function play(i){
+  if(i<0||i>=tracks.length)return;
+  cur=i;
+  if(url)URL.revokeObjectURL(url);
+  url=URL.createObjectURL(tracks[i].blob);
+  audio.src=url;audio.play().catch(()=>{});
+  setNow();render();
+  if('mediaSession' in navigator){
+    try{navigator.mediaSession.metadata=new MediaMetadata({title:tracks[i].name,artist:'Мой плейлист'})}catch(e){}
+  }
+}
+function next(auto){
+  if(!tracks.length)return;
+  let i;
+  if(shuffle&&tracks.length>1){do{i=Math.floor(Math.random()*tracks.length)}while(i===cur)}
+  else{i=cur+1;if(i>=tracks.length){if(auto&&!repeat){audio.pause();return}i=0}}
+  play(i);
+}
+function prev(){
+  if(!tracks.length)return;
+  if(audio.currentTime>3){audio.currentTime=0;return}
+  play(cur<=0?tracks.length-1:cur-1);
+}
+function toggle(){
+  if(cur<0){if(tracks.length)play(0);return}
+  audio.paused?audio.play():audio.pause();
+}
+function setNow(){
+  const n=$('#now');n.textContent='';
+  if(cur<0){n.textContent='Ничего не играет';const s=document.createElement('small');s.textContent='Добавьте треки ниже';n.append(s);return}
+  n.textContent=tracks[cur].name;
+  const s=document.createElement('small');s.textContent='Трек '+(cur+1)+' из '+tracks.length;n.append(s);
+}
+function render(){
+  const ul=$('#list');ul.textContent='';
+  tracks.forEach((t,i)=>{
+    const li=document.createElement('li');if(i===cur)li.className='cur';
+    const b=document.createElement('button');b.className='t';b.textContent=t.name;b.onclick=()=>play(i);
+    const r=document.createElement('button');r.className='rm';r.textContent='×';r.setAttribute('aria-label','Удалить '+t.name);
+    r.onclick=()=>{if(confirm('Удалить «'+t.name+'» из плейлиста?'))remove(i)};
+    li.append(b,r);ul.append(li);
+  });
+  $('#empty').hidden=tracks.length>0;
+  $('#cnt').textContent=tracks.length?'Треки: '+tracks.length:'Треки';
+}
+function ico(){$('#ico').innerHTML=audio.paused?'<path d="M8 5v14l11-7z"/>':'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';$('#pp').setAttribute('aria-label',audio.paused?'Играть':'Пауза')}
+audio.addEventListener('play',ico);audio.addEventListener('pause',ico);
+audio.addEventListener('ended',()=>next(true));
+audio.addEventListener('loadedmetadata',()=>{$('#td').textContent=fmt(audio.duration)});
+audio.addEventListener('timeupdate',()=>{
+  const d=audio.duration||0,p=d?audio.currentTime/d*1000:0;
+  const sk=$('#seek');if(!sk.dataset.drag){sk.value=p;sk.style.setProperty('--p',(p/10)+'%')}
+  $('#tc').textContent=fmt(audio.currentTime);
+});
+$('#seek').addEventListener('input',e=>{e.target.dataset.drag=1;e.target.style.setProperty('--p',(e.target.value/10)+'%')});
+$('#seek').addEventListener('change',e=>{delete e.target.dataset.drag;if(audio.duration)audio.currentTime=e.target.value/1000*audio.duration});
+$('#pp').onclick=toggle;$('#next').onclick=()=>next(false);$('#prev').onclick=prev;
+$('#shuf').onclick=e=>{shuffle=!shuffle;e.currentTarget.setAttribute('aria-pressed',shuffle)};
+$('#rep').onclick=e=>{repeat=!repeat;e.currentTarget.setAttribute('aria-pressed',repeat)};
+$('#addbtn').onclick=()=>$('#file').click();
+$('#file').onchange=e=>{add([...e.target.files]);e.target.value=''};
+if('mediaSession' in navigator){
+  const h=(a,f)=>{try{navigator.mediaSession.setActionHandler(a,f)}catch(e){}};
+  h('play',toggle);h('pause',toggle);h('previoustrack',prev);h('nexttrack',()=>next(false));
+}
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "appId": "app.roadplaylist",
+  "appName": "В дороге",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}
